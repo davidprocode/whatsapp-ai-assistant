@@ -1,4 +1,4 @@
-# WhatsApp AI Assistant 🤖
+# 🤖 WhatsApp AI Assistant 
 
 ## Main technologies used
 
