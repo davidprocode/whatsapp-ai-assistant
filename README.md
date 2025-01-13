@@ -1,5 +1,7 @@
 # 🤖 WhatsApp AI Assistant 
 
+A Venom Bot-powered app that answers pre-configured triggers, like 'How does the solar system work?', with quick, accurate responses from OpenAI.
+
 ## Main technologies used
 
 - [TypeScript](https://www.typescriptlang.org/)
