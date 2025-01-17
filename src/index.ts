@@ -1,9 +1,13 @@
-import 'dotenv/config'
-import { Whatsapp, create as venomCreate } from "venom-bot";
+import "dotenv/config";
+import { Message, Whatsapp, create as venomCreate } from "venom-bot";
 import OpenAI from "openai";
 
 venomCreate({
   session: "session-name",
+  BrowserFetcher: false,
+  browserPathExecutable: process.env.BROWSER_PATH_EXECUTABLE ?? undefined,
+  browserWS: undefined,
+  browserArgs: ["--headless"],
 })
   .then((client) => start(client))
   .catch((erro) => {
@@ -15,30 +19,28 @@ const openai = new OpenAI({
 });
 
 async function start(client: Whatsapp) {
-  client.onAnyMessage(async (message) => {
-    if (message?.from === `${process.env.MY_PHONE}@c.us` && message?.body?.includes(String(process.env.TRIGGER_COMMAND))) {
-      const content = `   
-         ${String(process.env.TEMPLATE_COMMAND)} ${message.body}?"
-      `.trim();
-
-      const response = await openai.chat.completions.create({
-        model: String(process.env.OPENAI_MODEL),
-        temperature: Number(process.env.OPENAI_TEMPERATURE),
-        stream: false,
-        messages: [{ role: "user", content }],
-      });
-
-      client
-        .sendText(
-          message.from,
-          `🤖: ${response.choices[0].message.content}`
-        )
-        .then((result: any) => {
-          console.log("Result: ", result);
-        })
-        .catch((erro: any) => {
-          console.error("Error when sending: ", erro);
-        });
-    }
+  client.onMessage(async (message) => {
+    await handleMessage(client, message);
   });
+}
+async function handleMessage(client: Whatsapp, message: Message) {
+  if (message?.body) {
+    const content = `${message.body}`.trim();
+
+    const response = await openai.chat.completions.create({
+      model: String(process.env.OPENAI_MODEL),
+      temperature: Number(process.env.OPENAI_TEMPERATURE),
+      stream: false,
+      messages: [{ role: "user", content }],
+    });
+
+    client
+      .sendText(message.from, `🤖: ${response.choices[0].message.content}`)
+      .then((result: any) => {
+        console.log("Result: ", result);
+      })
+      .catch((erro: any) => {
+        console.error("Error when sending: ", erro);
+      });
+  }
 }
