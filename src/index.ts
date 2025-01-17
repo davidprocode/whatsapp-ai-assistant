@@ -25,7 +25,23 @@ async function start(client: Whatsapp) {
 }
 async function handleMessage(client: Whatsapp, message: Message) {
   if (message?.body) {
+    const sender = message.sender;
+    const senderid = message.sender.id;
+    const senderShortName = message.sender.shortName;
+    const timestamp = message.timestamp;
     const content = `${message.body}`.trim();
+
+    if (process.env.ENV === "Env") {
+      console.log(`
+        _______________________________
+  
+        Sender Name: ${senderShortName}
+        Sender ID: ${senderid}
+        Content: ${content}
+        timestamp: ${timestamp}
+        _______________________________
+        `);
+    }
 
     const response = await openai.chat.completions.create({
       model: String(process.env.OPENAI_MODEL),
@@ -37,7 +53,7 @@ async function handleMessage(client: Whatsapp, message: Message) {
     client
       .sendText(message.from, `🤖: ${response.choices[0].message.content}`)
       .then((result: any) => {
-        console.log("Result: ", result);
+        // console.log("Result: ", result);
       })
       .catch((erro: any) => {
         console.error("Error when sending: ", erro);
