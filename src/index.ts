@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { Message, Whatsapp, create as venomCreate } from "venom-bot";
 import OpenAI from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 venomCreate({
-  session: "session-name",
+  session: "AI-Assistent",
   BrowserFetcher: false,
   browserPathExecutable: process.env.BROWSER_PATH_EXECUTABLE ?? undefined,
   browserWS: undefined,
@@ -43,20 +44,51 @@ async function handleMessage(client: Whatsapp, message: Message) {
         `);
     }
 
+    const messagesMemory: ChatCompletionMessageParam[] = [
+      { role: "system", content: `${process.env.TEMPLATE_COMMAND}` },
+    ];
+
+    messagesMemory.push({ role: "user", content: content });
+    await saveUserMessage(senderid, { role: "user", content: content });
+
     const response = await openai.chat.completions.create({
       model: String(process.env.OPENAI_MODEL),
       temperature: Number(process.env.OPENAI_TEMPERATURE),
       stream: false,
-      messages: [{ role: "user", content }],
+      user: senderid,
+      messages: messagesMemory,
     });
 
     client
       .sendText(message.from, `🤖: ${response.choices[0].message.content}`)
-      .then((result: any) => {
-        // console.log("Result: ", result);
+      .then(async (result: any) => {
+        messagesMemory.push({
+          role: "assistant",
+          content: response.choices[0].message.content,
+        });
+        await saveGPTMessage(senderid, {
+          role: "user",
+          content: response.choices[0].message.content ?? "",
+        });
       })
       .catch((erro: any) => {
         console.error("Error when sending: ", erro);
       });
   }
+}
+
+async function saveUserMessage(
+  senderid: string,
+  arg0: { role: string; content: string }
+) {
+  console.log(senderid);
+  console.log("Save User:", arg0.content);
+}
+
+async function saveGPTMessage(
+  senderid: string,
+  arg0: { role: string; content: string }
+) {
+  console.log(senderid);
+  console.log("Save GPT:", arg0.content);
 }
